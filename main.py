@@ -150,6 +150,8 @@ def main():
             click = False
         
         cant_put = True
+        cnt_black = 0
+        cnt_white = 0
 
         for y in range(8):
             for x in range(8):
@@ -168,12 +170,14 @@ def main():
                     pass
 
                 elif field[y][x] == 1:
+                    cnt_white += 1
                     # 2つでアンチエイリアスされた円の描画
                     color = (255,255,255)
                     gfxdraw.filled_circle(screen, int(PADDING+MASS_SIZE*x+MASS_SIZE*0.5-1), int(PADDING+MASS_SIZE*y+MASS_SIZE*0.5-1), int(MASS_SIZE*0.4), color)
                     gfxdraw.aacircle(screen, int(PADDING+MASS_SIZE*x+MASS_SIZE*0.5-1), int(PADDING+MASS_SIZE*y+MASS_SIZE*0.5-1), int(MASS_SIZE*0.4), color)
 
                 elif field[y][x] == 2:
+                    cnt_black += 1
                     color = (0,0,0)
                     gfxdraw.filled_circle(screen, int(PADDING+MASS_SIZE*x+MASS_SIZE*0.5-1), int(PADDING+MASS_SIZE*y+MASS_SIZE*0.5-1), int(MASS_SIZE*0.4), color)
                     gfxdraw.aacircle(screen, int(PADDING+MASS_SIZE*x+MASS_SIZE*0.5-1), int(PADDING+MASS_SIZE*y+MASS_SIZE*0.5-1), int(MASS_SIZE*0.4), color)
@@ -189,6 +193,9 @@ def main():
         gfxdraw.filled_circle(screen, 40, 455, int(MASS_SIZE*0.4), color)
         gfxdraw.aacircle(screen, 40, 455, int(MASS_SIZE*0.4), (0,0,0))
         screen.blit(turn_text, (PADDING+MASS_SIZE,PADDING+MASS_SIZE*8+20))
+
+        cnt_text = font.render(f"Black:{cnt_black} / White:{cnt_white}", True, (0,0,0))
+        screen.blit(cnt_text, (PADDING+MASS_SIZE,PADDING+MASS_SIZE*8+70))
 
         if cant_put == True:
             cant_put_count += 1
@@ -211,6 +218,13 @@ def main():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
+    
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+ 
 
 
 if __name__ == "__main__":
