@@ -2,21 +2,12 @@ import pygame
 from pygame.locals import *
 from pygame import gfxdraw
 import sys
+import copy
+
 
 # 0: なし
 # 1: 白
 # 2: 黒
-
-field = [
-    [0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0],
-    [0,0,0,1,2,0,0,0],
-    [0,0,0,2,1,0,0,0],
-    [0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0]
-]
 
 MASS_SIZE = 50
 PADDING = 20
@@ -33,7 +24,40 @@ DIRECTIONS = [
     [-1,-1],
 ]
 
-def can_put_check(my_color, mouse_field_x, mouse_field_y):
+
+def bot(field, turn):
+    if turn == 1:
+        enemy = 2
+    if turn == 2:
+        enemy = 1
+    best_cnt = 0
+    best_pos = [0,0]
+    for y in range(8):
+        for x in range(8):
+            clone_field = put(field, turn, x, y)
+            if clone_field == False:
+                continue
+            color_count = 0
+            for y2 in range(8):
+                for x2 in range(8):
+                    clone_clone_field = put(clone_field, enemy, x2, y2)
+                    if clone_clone_field == False:
+                        continue
+                    for cnty in range(8):
+                        for cntx in range(8):
+                            if clone_clone_field[cnty][cntx] == turn:
+                                color_count += 1
+
+            if best_cnt < color_count:
+                best_cnt = color_count
+                best_pos= [x,y]
+    
+    return best_pos
+    
+                
+
+
+def can_put_check(field, my_color, mouse_field_x, mouse_field_y):
     # 自分
     mouse_field_x_mass, mouse_field_y_mass = int(mouse_field_x), int(mouse_field_y)
 
@@ -88,29 +112,30 @@ def can_put_check(my_color, mouse_field_x, mouse_field_y):
 
 
 
-def put(my_color, mouse_field_x, mouse_field_y):
+def put(field, my_color, mouse_field_x, mouse_field_y):
+    clone_field = copy.deepcopy(field)
     mouse_field_x_mass, mouse_field_y_mass = int(mouse_field_x), int(mouse_field_y)
-    result = can_put_check(my_color, mouse_field_x, mouse_field_y)
+    result = can_put_check(field, my_color, mouse_field_x, mouse_field_y)
     if result == False:
         return False
     can_put_directions = result
-    field[mouse_field_y_mass][mouse_field_x_mass] = my_color
+    clone_field[mouse_field_y_mass][mouse_field_x_mass] = my_color
     for direction in can_put_directions:
         direction_x = direction[0]
         direction_y = direction[1]
         put_x = mouse_field_x_mass+direction_x
         put_y = mouse_field_y_mass+direction_y
-        field[put_y][put_x] = my_color
+        clone_field[put_y][put_x] = my_color
         finished = False
         while not finished:
             put_x += direction_x
             put_y += direction_y
-            if field[put_y][put_x] == my_color:
+            if clone_field[put_y][put_x] == my_color:
                 finished = True
             else:
-                field[put_y][put_x] = my_color
+                clone_field[put_y][put_x] = my_color
     
-    return True
+    return clone_field
  
  
 
@@ -124,6 +149,19 @@ def main():
     click = False # 一度のみクリック判定用
     turn = 2
     cant_put_count = 0
+
+    field = [
+        [0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0],
+        [0,0,0,1,2,0,0,0],
+        [0,0,0,2,1,0,0,0],
+        [0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0]
+    ]
+
+
 
     font = pygame.font.SysFont(None, 50)
 
@@ -140,12 +178,18 @@ def main():
                 click = True
                 # クリック時、一度だけ行われる処理
                 if PADDING <= mouse_x and PADDING <= mouse_y:
-                    isput = put(turn, mouse_field_x, mouse_field_y)
-                    if isput:
+                    field_data = put(field, turn, mouse_field_x, mouse_field_y)
+                    if field_data != False:
+                        field = copy.deepcopy(field_data)
                         if turn == 1:
                             turn = 2
                         elif turn == 2:
-                            turn = 1
+                            pos = bot(field, 1)
+                            result2 = put(field, 1, pos[0], pos[1])
+                            print(pos)
+                            if result2 != False:
+                                field = copy.deepcopy(result2)
+                            turn = 2
         else:
             click = False
         
@@ -156,7 +200,7 @@ def main():
         for y in range(8):
             for x in range(8):
                 color = (0,200,0)
-                result = can_put_check(turn, x, y) # TODO:mouse field x渡すんじゃないからなんとかする
+                result = can_put_check(field, turn, x, y) # TODO:mouse field x渡すんじゃないからなんとかする
                 if result != False:
                     cant_put = False
                     color = (0,240,0)
@@ -207,7 +251,7 @@ def main():
             cant_put_count = 0
         
         if 1 < cant_put_count:
-            print("ゲーム終了!") #TODO: なんかカウントとか表示する終わったら即ウィンドウとじちゃうから
+            print("ゲーム終了!")
             break
 
         pygame.display.update()
